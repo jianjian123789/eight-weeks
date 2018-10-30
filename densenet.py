@@ -60,10 +60,91 @@ def densenet(images, num_classes=1001, is_training=False,
     with tf.variable_scope(scope, 'DenseNet', [images, num_classes]):
         with slim.arg_scope(bn_drp_scope(is_training=is_training,
                                          keep_prob=dropout_keep_prob)) as ssc:
-            pass
-            ##########################
-            # Put your code here.
-            ##########################
+            # first conv layer with conv kernal 7*7*2growth
+            scope = 'conv1'
+            net = slim.conv2d(images, 2*growth,[7,7],stride=2,scope=scope)
+            end_points[scope] = net
+
+            # first pooling layer with max pooling and stride is 2
+            scope = 'pool1'
+            net = slim.max_pool2d(net,[3,3],stride = 2,scope=scope)
+            end_points[scope] = net
+
+            # first dense block with 6 layer which will increase 6 growth feature map
+            scope = 'block1'
+            net = block(net,6,growth,scope=scope)
+            end_points[scope] = net
+            # output layers: 2 growth + 6 growth
+
+            # first transition Layer
+            scope = 'transition1'
+            # the 1*1 conv in transition layer
+            net = bn_act_conv_drp(net,reduce_dim(net),[1,1],scope = scope)
+            end_points[scope] = net
+            # the avg pooling in transition layer
+            scope = 'avgpool1'
+            net = slim.avg_pool2d(net,[2,2],stride = 2,scope=scope)
+            end_points[scope] = net
+            # output layers: 4 growth
+
+            # sencond dense block
+            scope = 'block2'
+            net = block(net,12,growth,scope=scope)
+            end_points[scope] = net
+            # output layers: 4 + 12 growth
+
+            scope = 'transition2'
+            net = bn_act_conv_drp(net,reduce_dim(net),[1,1],scope = scope)
+            end_points[scope] = net
+            # the avg pooling in transition layer
+            scope = 'avgpool2'
+            net = slim.avg_pool2d(net,[2,2],stride = 2,scope=scope)
+            end_points[scope] = net
+            # output layers: 8 growth
+
+            # third dense block
+            scope = 'block3'
+            net = block(net,32,growth,scope=scope)
+            end_points[scope] = net
+            # output layers: 8+32 growth
+
+            # third transition layers:
+            scope = 'transition3'
+            net = bn_act_conv_drp(net,reduce_dim(net),[1,1],scope = scope)
+            # the avg pooling in transition layer
+            scope = 'avgpool3'
+            net = slim.avg_pool2d(net,[2,2],stride = 2,scope=scope)
+            end_points[scope] = net
+            # output layers: 20 growth
+
+            # 4th dense block
+            scope = 'block4'
+            net = block(net,32,growth,scope=scope)
+            end_points[scope] = net
+            # output layers: 20 + 32 growth
+
+            # batch_normal
+            scope = 'last_batch_norm_relu'
+            net = slim.batch_norm(net,scope=scope)
+            net = tf.nn.relu(net)
+
+            # As the input image size is unknow
+            # use a average pooling to set the feature map size to 1*1
+            scope = 'global_average'
+            net = slim.avg_pool2d(net,net.shape[1:3],scope=scope)
+
+            # last layer to classfier
+            # use a 1*1 conv to generate pre_logits
+            biases_initializer = tf.constant_initializer(0.1)
+            scope = 'pre_logits'
+            pre_logit = slim.conv2d(net,num_classes,[1,1],biases_initializer=biases_initializer,
+                    scope = scope)
+            end_points[scope] = net
+
+            scope = 'logits'
+            logits = tf.squeeze(pre_logit)
+            end_points[scope] = logits
+            print(logits)
 
     return logits, end_points
 
