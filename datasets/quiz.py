@@ -33,7 +33,7 @@ _FILE_PATTERN = 'pj_vehicle_%s_*.tfrecord'
 
 SPLITS_TO_SIZES = {'train': 50000, 'validation': 10000}
 
-_NUM_CLASSES = 763
+_NUM_CLASSES = 764
 
 _ITEMS_TO_DESCRIPTIONS = {
     'image': 'A color image of varying size.',
