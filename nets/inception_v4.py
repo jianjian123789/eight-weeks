@@ -253,8 +253,8 @@ def inception_v4_base(inputs, final_endpoint='Mixed_7d', scope=None):
         if add_and_check_final(block_scope, net): return net, end_points
   raise ValueError('Unknown final endpoint %s' % final_endpoint)
 
-
-def inception_v4(inputs, num_classes=1001, is_training=True,
+#======(1):Here the num_classes is assigned from 1001 to 765
+def inception_v4(inputs, num_classes=765, is_training=True,
                  dropout_keep_prob=0.8,
                  reuse=None,
                  scope='InceptionV4',
